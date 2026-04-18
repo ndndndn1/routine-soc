@@ -1,0 +1,71 @@
+name: moneyless-stack
+
+# default-deny 정책:
+# 각 노드는 자기 자신의 internal network 에만 join. inter-node
+# 통신 network 는 의도적으로 정의되지 않는다.
+# 링크를 열려면 PHYSICAL_LINKS.md 해당 항목이 enabled 가 되어야 하며,
+# 같은 commit 에서 여기에 명시적 network + 양측 서비스 join 이 추가된다.
+
+networks:
+  l1_isolated:
+    driver: bridge
+    internal: true
+  l2_isolated:
+    driver: bridge
+    internal: true
+  l3_isolated:
+    driver: bridge
+    internal: true
+  bridge_isolated:
+    driver: bridge
+    internal: true
+
+services:
+  l1-reliability:
+    build: ./nodes/l1-reliability
+    container_name: ml-l1-reliability
+    networks: [l1_isolated]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  l2-entropy-buffer:
+    build: ./nodes/l2-entropy-buffer
+    container_name: ml-l2-entropy-buffer
+    networks: [l2_isolated]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  l3-consensus:
+    build: ./nodes/l3-consensus
+    container_name: ml-l3-consensus
+    networks: [l3_isolated]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  physical-bridge:
+    build: ./nodes/physical-bridge
+    container_name: ml-physical-bridge
+    networks: [bridge_isolated]
+    restart: "no"
+    profiles: ["bridge"]   # default-deny: 명시적 profile 지정 없이는 시작 안 됨
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
